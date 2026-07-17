@@ -1,8 +1,21 @@
-import { chromium }   from 'playwright';
+import { chromium }   from 'playwright-core';
 import fs              from 'node:fs/promises';
 import path            from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { virtualTimeScript } from './virtualTime.js';
 import { startServer }       from './server.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const VENDOR_DIR = path.resolve(__dirname, '../../runtime/vendor');
+
+// support.js loads these from unpkg.com at render time. We serve byte-identical local
+// copies instead so a render never depends on the network (SRI still passes). Longer
+// substrings first so "react-dom" is matched before "react".
+const VENDOR_MAP = [
+  { match: 'react-dom.production.min.js', file: 'react-dom.production.min.js' },
+  { match: 'react.production.min.js',     file: 'react.production.min.js' },
+  { match: 'babel.min.js',                file: 'babel.min.js' },
+];
 
 // The DC runtime replaces the raw <x-dc> template with <div id="dc-root"> and renders
 // into it. Scoping to #dc-root is what distinguishes the *mounted* stage from the raw
@@ -16,6 +29,36 @@ const DEFAULT_HIDE = ['[data-htv-hide]'];
 function hideCss(extraSelectors = []) {
   const selectors = [...DEFAULT_HIDE, ...extraSelectors];
   return `${selectors.join(',\n')} { display: none !important; }\n* { cursor: none !important; }`;
+}
+
+/**
+ * Launch a Chromium-family browser, preferring one already on the machine so a low-bandwidth
+ * user never has to download Playwright's ~150MB Chromium. Every Windows machine ships Edge;
+ * most others have Chrome. Falls back to Playwright's bundled Chromium if present.
+ */
+async function launchBrowser(verbose) {
+  const attempts = [
+    { channel: 'msedge', label: 'system Microsoft Edge' },
+    { channel: 'chrome', label: 'system Google Chrome' },
+    { channel: undefined, label: 'bundled Chromium' },
+  ];
+  const errors = [];
+  for (const a of attempts) {
+    try {
+      const opts = { headless: true };
+      if (a.channel) opts.channel = a.channel;
+      const browser = await chromium.launch(opts);
+      if (verbose) console.log(`  Using ${a.label}`);
+      return browser;
+    } catch (err) {
+      errors.push(`${a.label}: ${err.message.split('\n')[0]}`);
+    }
+  }
+  throw new Error(
+    'Could not launch a browser. Tried system Edge, system Chrome, and bundled Chromium:\n' +
+    errors.map(e => `  - ${e}`).join('\n') +
+    '\n  Install Microsoft Edge or Google Chrome, or run:  npx playwright install chromium'
+  );
 }
 
 /**
@@ -61,7 +104,7 @@ export async function captureFrames({
   await fs.mkdir(framesDir, { recursive: true });
 
   const server  = await startServer(projectRoot);
-  const browser = await chromium.launch({ headless: true });
+  const browser = await launchBrowser(verbose);
 
   try {
     const context = await browser.newContext({
@@ -89,6 +132,30 @@ export async function captureFrames({
     page.on('requestfailed', (req) => {
       const reason = req.failure()?.errorText || 'unknown';
       record(`  [request failed] ${req.url()} — ${reason}`);
+    });
+
+    // Serve React/ReactDOM/Babel from local vendored copies so rendering never touches the
+    // network. A request we don't recognize falls through to the network rather than failing.
+    await page.route(/unpkg\.com/, async (route) => {
+      const url = route.request().url();
+      const hit = VENDOR_MAP.find(v => url.includes(v.match));
+      if (!hit) {
+        record(`  [vendor] no local copy for ${url} — falling through to network`);
+        return route.continue();
+      }
+      try {
+        const body = await fs.readFile(path.join(VENDOR_DIR, hit.file));
+        await route.fulfill({
+          status:      200,
+          contentType: 'application/javascript; charset=utf-8',
+          headers:     { 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-cache' },
+          body,
+        });
+        if (verbose) record(`  [vendor] served ${hit.file} locally`);
+      } catch (err) {
+        record(`  [vendor] failed to serve ${hit.file}: ${err.message} — falling through`);
+        return route.continue();
+      }
     });
 
     // Virtual clock must be injected before any page JS runs

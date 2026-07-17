@@ -14,15 +14,22 @@ Frames are captured in a headless browser driven by a **virtual clock**, not a s
 - macOS, Linux, or Windows 10/11
 - Node.js 20+
 - ffmpeg — `brew install ffmpeg` (macOS), `apt install ffmpeg` (Debian/Ubuntu), or `winget install Gyan.FFmpeg` (Windows)
+- A Chromium-family browser — **Microsoft Edge** (preinstalled on Windows), **Google Chrome**, or Playwright's Chromium. The tool uses whichever it finds; it does **not** download one.
 
 **On Windows, follow [WINDOWS-SETUP.md](WINDOWS-SETUP.md)** for step-by-step install commands.
+
+### Offline / low-bandwidth
+
+The tool renders **fully offline** after install: React and its dependencies are bundled and
+served locally (never fetched from a CDN at render time), and it uses a browser already on the
+machine. Only the one-time install (Node, ffmpeg, a few small npm packages) needs the network.
 
 ## Install
 
 ```bash
 git clone <repo-url> html-to-video
 cd html-to-video
-npm install      # also installs the Playwright Chromium browser
+npm install      # small — no browser download; uses Edge/Chrome already on the machine
 npm link         # makes `html-to-video` available system-wide
 ```
 

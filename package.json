@@ -9,8 +9,7 @@
   },
   "files": ["bin", "src", "specs", "runtime", "example", "docs"],
   "scripts": {
-    "test": "node --test test/render.test.js",
-    "postinstall": "playwright install chromium"
+    "test": "node --test test/render.test.js"
   },
   "keywords": ["video", "animation", "html", "ffmpeg", "playwright", "render", "mp4"],
   "dependencies": {
@@ -18,7 +17,7 @@
     "commander": "^12.1.0",
     "ora": "^8.1.1",
     "p-limit": "^6.1.0",
-    "playwright": "^1.48.0",
+    "playwright-core": "^1.48.0",
     "zod": "^3.23.8"
   }
 }

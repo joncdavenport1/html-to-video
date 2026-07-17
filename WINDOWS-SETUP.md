@@ -3,6 +3,11 @@
 The tool itself is identical on Windows and Mac — only the one-time install differs.
 These commands assume **Windows 10 or 11** and either **PowerShell** or **Windows Terminal**.
 
+**Low-bandwidth note:** this build is designed to work on limited or unreliable internet.
+It uses the **Microsoft Edge that already ships with Windows** (no 150 MB browser download),
+and it bundles everything it needs to render — so once installed, **rendering works fully
+offline**. The only downloads are Node.js, ffmpeg, and a few small JavaScript packages.
+
 ## 1. Install Node.js (v20+)
 
 ```powershell
@@ -42,12 +47,15 @@ npm install
 npm link
 ```
 
-`npm install` also downloads the browser engine (~150 MB), so give it a minute.
-Verify the command is available:
+`npm install` here is small and fast — it does **not** download a browser (the tool uses the
+Edge already on your PC). Verify the command is available:
 
 ```powershell
 html-to-video --list
 ```
+
+If you ever see a "Could not launch a browser" error, it means Edge and Chrome weren't found —
+install one, or run `npx playwright install chromium` once as a fallback.
 
 ## 4. Render
 
@@ -80,9 +88,9 @@ ffmpeg installed but isn't on PATH. Reopen the terminal first. If still missing,
 `ffmpeg.exe` (winget puts it under `%LOCALAPPDATA%\Microsoft\WinGet\Packages\Gyan.FFmpeg...`)
 and add that `bin` folder to your PATH via *Settings → Edit environment variables*.
 
-**`npm install` fails downloading the browser**
-Corporate networks sometimes block the Playwright CDN. Retry on a normal network, or set
-`PLAYWRIGHT_DOWNLOAD_HOST` per Playwright's docs.
+**"Could not launch a browser"**
+The tool looks for Microsoft Edge, then Google Chrome. If neither is found (unusual on
+Windows, which ships Edge), install one, or run `npx playwright install chromium` once.
 
 **A render succeeds but the video is blank or wrong length**
 The animation's declared `duration` in `animations.json` must match its real length, and
