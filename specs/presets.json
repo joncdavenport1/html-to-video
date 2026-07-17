@@ -1,0 +1,83 @@
+{
+  "$schema": "./presets.schema.json",
+  "presets": {
+    "reels": {
+      "label": "Instagram Reels / TikTok / YouTube Shorts / Stories",
+      "width": 1080,
+      "height": 1920,
+      "fps": 60,
+      "codec": "h264",
+      "bitrate": "10M",
+      "pixelFormat": "yuv420p",
+      "container": "mp4",
+      "defaultFit": "contain",
+      "platforms": ["Instagram Reels", "TikTok", "YouTube Shorts", "Instagram Stories", "Snapchat"],
+      "safeArea": {
+        "top": 220,
+        "bottom": 440,
+        "note": "TikTok and Reels overlay UI on the bottom (captions, profile, sound link). Keep critical content within these inset bounds."
+      }
+    },
+    "square": {
+      "label": "Instagram / LinkedIn Feed — Square",
+      "width": 1080,
+      "height": 1080,
+      "fps": 60,
+      "codec": "h264",
+      "bitrate": "10M",
+      "pixelFormat": "yuv420p",
+      "container": "mp4",
+      "defaultFit": "contain",
+      "platforms": ["Instagram Feed", "LinkedIn Feed", "Facebook Feed"]
+    },
+    "portrait": {
+      "label": "Instagram / LinkedIn Feed — Portrait (best-performing feed shape)",
+      "width": 1080,
+      "height": 1350,
+      "fps": 60,
+      "codec": "h264",
+      "bitrate": "10M",
+      "pixelFormat": "yuv420p",
+      "container": "mp4",
+      "defaultFit": "contain",
+      "platforms": ["Instagram Feed", "LinkedIn Feed"]
+    },
+    "hero": {
+      "label": "Landscape 16:9 — YouTube / LinkedIn Video / Website hero",
+      "width": 1920,
+      "height": 1080,
+      "fps": 60,
+      "codec": "h264",
+      "bitrate": "16M",
+      "pixelFormat": "yuv420p",
+      "container": "mp4",
+      "defaultFit": "pass",
+      "platforms": ["YouTube", "LinkedIn Video", "Vimeo", "Website hero", "Email header"]
+    },
+    "hero-4k": {
+      "label": "Landscape 16:9 at 4K — broadcast / projection / future-proof master",
+      "width": 3840,
+      "height": 2160,
+      "fps": 60,
+      "codec": "h264",
+      "bitrate": "40M",
+      "pixelFormat": "yuv420p",
+      "container": "mp4",
+      "defaultFit": "pass",
+      "platforms": ["YouTube 4K", "Broadcast", "Projection", "Cinema digital signage"]
+    },
+    "alpha": {
+      "label": "Alpha-channel ProRes 4444 master — compositing in Premiere / After Effects / Final Cut",
+      "width": 1920,
+      "height": 1080,
+      "fps": 60,
+      "codec": "prores_4444",
+      "pixelFormat": "yuva444p10le",
+      "container": "mov",
+      "transparent": true,
+      "defaultFit": "pass",
+      "platforms": ["Premiere Pro", "After Effects", "Final Cut Pro", "DaVinci Resolve"],
+      "note": "Renderer must capture frames with transparent body background — see BRIEF.md alpha section. Only valid for source animations that don't rely on a colored body bg for composition."
+    }
+  }
+}

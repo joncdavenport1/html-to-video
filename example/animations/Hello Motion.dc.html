@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  html, body { margin: 0; padding: 0; background: #0E1216; overflow: hidden; }
+  * { box-sizing: border-box; }
+</style>
+</helmet>
+
+<!-- The element carrying data-screen-label is what gets filmed. Exactly one, always. -->
+<div data-screen-label="{{ screenLabel }}" style="position: fixed; inset: 0; background: #0E1216; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;">
+
+  <!-- Native 1920x1080 stage, scaled to fit whatever viewport it's opened in -->
+  <div style="position: absolute; top: 50%; left: 50%; width: 1920px; height: 1080px; transform-origin: 50% 50%; transform: translate(-50%, -50%) scale({{ stageScale }}); background: #0E1216; overflow: hidden;">
+
+    <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 64px;">
+
+      <!-- Three squares that rise and fade in, staggered -->
+      <div style="display: flex; gap: 40px;">
+        <div style="width: 160px; height: 160px; border-radius: 24px; background: #4ADE80; opacity: {{ box1Op }}; transform: translateY({{ box1Y }}px) rotate({{ box1Rot }}deg);"></div>
+        <div style="width: 160px; height: 160px; border-radius: 24px; background: #38BDF8; opacity: {{ box2Op }}; transform: translateY({{ box2Y }}px) rotate({{ box2Rot }}deg);"></div>
+        <div style="width: 160px; height: 160px; border-radius: 24px; background: #F472B6; opacity: {{ box3Op }}; transform: translateY({{ box3Y }}px) rotate({{ box3Rot }}deg);"></div>
+      </div>
+
+      <!-- Title -->
+      <div style="font-size: 76px; font-weight: 700; letter-spacing: -0.02em; color: #F8FAFC; opacity: {{ titleOp }}; transform: translateY({{ titleY }}px);">
+        Hello, motion.
+      </div>
+
+      <!-- Subtitle -->
+      <div style="font-size: 28px; font-weight: 500; color: #64748B; opacity: {{ subOp }};">
+        Edit this file, run the command again, watch it change.
+      </div>
+
+    </div>
+
+    <!-- Preview-only playback controls. data-htv-hide keeps them out of the render. -->
+    <div data-htv-hide style="position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 20px; width: 760px; max-width: 80%; padding: 12px 20px; background: rgba(20,23,28,0.72); border: 1px solid rgba(255,255,255,0.08); border-radius: 999px;">
+      <button onClick="{{ togglePlay }}" style="flex: none; width: 44px; height: 44px; border-radius: 50%; border: none; background: #38BDF8; color: #0E1216; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+        <sc-if value="{{ playing }}" hint-placeholder-val="{{ true }}">
+          <svg width="16" height="16" viewBox="0 0 16 16"><rect x="3" y="2" width="3.5" height="12" rx="1" fill="currentColor"></rect><rect x="9.5" y="2" width="3.5" height="12" rx="1" fill="currentColor"></rect></svg>
+        </sc-if>
+        <sc-if value="{{ paused }}" hint-placeholder-val="{{ true }}">
+          <svg width="16" height="16" viewBox="0 0 16 16"><path d="M4 2.5L13 8L4 13.5V2.5Z" fill="currentColor"></path></svg>
+        </sc-if>
+      </button>
+      <input type="range" min="0" max="1000" value="{{ progress }}" onInput="{{ onSeek }}" style="flex: 1;">
+      <span style="flex: none; font-size: 14px; font-weight: 600; color: #9AA6B2; font-variant-numeric: tabular-nums; min-width: 92px; text-align: right;">{{ timeLabel }}</span>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { t: 0, playing: true, scale: 1 };
+
+  // Must match "duration" for this animation in animations.json.
+  DURATION = 5.0;
+
+  componentDidMount() {
+    this._fit();
+    this._onResize = () => this._fit();
+    window.addEventListener('resize', this._onResize);
+    this._last = performance.now();
+    this._raf  = requestAnimationFrame(this._tick);
+  }
+
+  componentWillUnmount() {
+    cancelAnimationFrame(this._raf);
+    window.removeEventListener('resize', this._onResize);
+  }
+
+  _fit = () => {
+    this.setState({ scale: Math.min(window.innerWidth / 1920, window.innerHeight / 1080) });
+  };
+
+  // Drives off requestAnimationFrame + performance.now() — both are replaced by a
+  // virtual clock during rendering, which is what makes every frame deterministic.
+  _tick = (now) => {
+    const dt = (now - this._last) / 1000;
+    this._last = now;
+    if (this.state.playing) {
+      const t = this.state.t + dt;
+      if (t >= this.DURATION) this.setState({ t: this.DURATION, playing: false });
+      else                    this.setState({ t });
+    }
+    this._raf = requestAnimationFrame(this._tick);
+  };
+
+  togglePlay = () => {
+    if (this.state.playing) {
+      this.setState({ playing: false });
+    } else {
+      const atEnd = this.state.t >= this.DURATION - 0.001;
+      this._last  = performance.now();
+      this.setState({ t: atEnd ? 0 : this.state.t, playing: true });
+    }
+  };
+
+  onSeek = (e) => {
+    this.setState({ t: (parseFloat(e.target.value) / 1000) * this.DURATION, playing: false });
+  };
+
+  clamp(t, a, b) { return Math.max(0, Math.min(1, (t - a) / (b - a))); }
+  easeOut(x) { return 1 - Math.pow(1 - x, 3); }
+
+  box(t, start) {
+    const p = this.easeOut(this.clamp(t, start, start + 1.0));
+    return {
+      op:  p.toFixed(3),
+      y:   (60 * (1 - p)).toFixed(1),
+      rot: (-12 * (1 - p)).toFixed(2),
+    };
+  }
+
+  renderVals() {
+    const t = this.state.t;
+
+    const b1 = this.box(t, 0.2);
+    const b2 = this.box(t, 0.4);
+    const b3 = this.box(t, 0.6);
+
+    const titleP = this.easeOut(this.clamp(t, 1.2, 2.2));
+
+    return {
+      stageScale:  this.state.scale.toFixed(4),
+      screenLabel: 'Hello Motion @ ' + t.toFixed(1) + 's',
+
+      box1Op: b1.op, box1Y: b1.y, box1Rot: b1.rot,
+      box2Op: b2.op, box2Y: b2.y, box2Rot: b2.rot,
+      box3Op: b3.op, box3Y: b3.y, box3Rot: b3.rot,
+
+      titleOp: titleP.toFixed(3),
+      titleY:  (30 * (1 - titleP)).toFixed(1),
+      subOp:   this.easeOut(this.clamp(t, 2.0, 3.0)).toFixed(3),
+
+      playing:   this.state.playing,
+      paused:    !this.state.playing,
+      progress:  Math.round((t / this.DURATION) * 1000),
+      timeLabel: t.toFixed(1) + 's / ' + this.DURATION.toFixed(1) + 's',
+      togglePlay: this.togglePlay,
+      onSeek:     this.onSeek,
+    };
+  }
+}
+</script>
+</body>
+</html>

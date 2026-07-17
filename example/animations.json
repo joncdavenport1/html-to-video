@@ -1,0 +1,16 @@
+{
+  "output": "renders",
+  "animations": [
+    {
+      "id": "hello-motion",
+      "name": "Hello Motion",
+      "file": "animations/Hello Motion.dc.html",
+      "duration": 5.0,
+      "nativeWidth": 1920,
+      "nativeHeight": 1080,
+      "aspect": "16:9",
+      "background": "#0E1216",
+      "description": "Three squares rise in, a title lands, a subtitle fades up. The starter animation."
+    }
+  ]
+}

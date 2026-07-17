@@ -1,0 +1,7 @@
+node_modules/
+.cache/
+renders/
+.env
+*.mp4
+*.mov
+.DS_Store
