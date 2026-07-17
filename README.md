@@ -11,9 +11,11 @@ Frames are captured in a headless browser driven by a **virtual clock**, not a s
 
 ## Requirements
 
-- macOS or Linux
+- macOS, Linux, or Windows 10/11
 - Node.js 20+
-- ffmpeg — `brew install ffmpeg` (macOS) or `apt install ffmpeg` (Debian/Ubuntu)
+- ffmpeg — `brew install ffmpeg` (macOS), `apt install ffmpeg` (Debian/Ubuntu), or `winget install Gyan.FFmpeg` (Windows)
+
+**On Windows, follow [WINDOWS-SETUP.md](WINDOWS-SETUP.md)** for step-by-step install commands.
 
 ## Install
 
